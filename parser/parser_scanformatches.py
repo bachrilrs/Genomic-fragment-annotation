@@ -36,7 +36,6 @@ def parse_scanformatches(input_file: str):
         list: Une liste de listes, chaque sous-liste contenant les champs d'un match.
     """
     seq_id = None
-    match_list = []
     positions = {}
     i=0
     with open(input_file, "r") as f:
@@ -98,9 +97,9 @@ def write_gff3(input_file: str , output_file: str , feature_type , seq_fasta=Non
 
             phase = '.' # pas de phase pour RBS/promoteur/terminateur
             if codon_start:
-                attributs = f"ID={i};Note={source}_prediction;Start_Codon={codon_start}"
+                attributs = f"ID{feature_type}={i};Note={source}_prediction;Start_Codon={codon_start}"
             else:
-                attributs = f"ID={i};Note={source}_prediction"
+                attributs = f"ID{feature_type}={i};Note={source}_prediction"
             out_fh.write(f"{seq_id}\t{source}\t{feature_type}\t{gff_start}\t{gff_end}\t{score}\t{strand}\t{phase}\t{attributs}\n")
     return f"GFF3 file '{output_file}' written successfully."
 

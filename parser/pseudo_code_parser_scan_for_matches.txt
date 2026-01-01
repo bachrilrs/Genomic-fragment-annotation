@@ -1,9 +1,10 @@
-Taille_Sequence(chemin_fichier)
+Nom de la méthode ( ) : taille_seq
+taille_seq(seq_fasta_file)
 Description :
 Calcule la taille de la séquence à partir d'un fichier FASTA.
 
 En-tête :
-chemin_fichier ↓ : chemin du fichier FASTA
+seq_fasta_file ↓ : chemin du fichier FASTA
 Valeur retournée : Entier représentant la taille de la séquence
 
 Corps
@@ -13,16 +14,174 @@ Variables locales
 
 
 Instructions
-taille ← 0
-Avec fichier ouvert chemin_fichier EN LECTURE FAIRE
+taille <- 0
+OUVRIR seq_fasta_file EN LECTURE FAIRE
     POUR CHAQUE ligne DANS fichier FAIRE
-        ligne ← supprimerEspacesDebutetFin(ligne)
-        SI ligne commence par '>' ALORS
-            CONTINUER
-        SINON
-            taille ← taille + Longueur(ligne)
+        ligne <- supprimerEspacesDebutetFin(ligne)
+        SI ligne ne commence pas par '>' ALORS
+            taille <- taille + Longueur(ligne)
         FIN SI
     FIN POUR
-FIN AVEC
+FERMER fichier
 Retourner taille
 
+
+
+
+
+
+
+
+
+Nom de la méthode ( ) : parse_scanformatches
+parse_scanformatches(input_file ↓ )
+
+Description :
+Analyse un fichier de résultats de recherche de motifs et extrait les informations pertinentes.
+
+En-tête :
+input_file ↓ : chemin du fichier de résultats de recherche de motifs
+
+Valeur retournée :
+- tuple (seq_id: Chaîne de caractères, positions: Dictionnaire)
+
+Corps
+Variables locales
+- seq_id: Chaîne de caractères
+- positions: Dictionnaire
+- i: Entier
+- ligne: Chaîne de caractères
+- seq_id_match: Chaîne de caractères
+- pos_match: Chaine de caractères
+- start_match : Chaine de caractères
+
+Instructions
+
+seq_id <- Non défini
+positions <- Dictionnaire vide
+i <- 0
+OUVRIR input_file EN LECTURE FAIRE
+    POUR CHAQUE ligne DANS fichier FAIRE
+        ligne <- supprimerEspacesDebutetFin(ligne)
+        SI ligne commence par '>' et seq_id = Non defini ALORS
+            seq_id <- ExtraireAvecExpressionRégulière('^>(\S+):' , ligne)
+        FIN SI
+        SI ligne commence par '>' ALORS
+            i <- i + 1
+            pos_match <- ExtraireAvecExpressionRégulière(':\[(\d*),(\d*)]' ,ligne)
+            positions[i] <- pos_match
+        FIN SI
+        start_match <- ExtraireAvecExpressionRégulière('\b(atg|ttg|gtg)\b' , ligne)
+        SI start_match n'est pas vide ALORS
+            Ajouter a positions[i] start_match
+        FIN SI
+    FIN POUR
+FERMER fichier
+
+Retourner seq_id, positions
+
+
+
+
+
+
+Nom de la méthode ( ) : Ecrire_GFF3
+Ecrire_GFF3(input_file ↓ , output_file ↓ , feature_type ↓ ,  seq_fasta_file (Non défini par défaut))
+
+Description :
+Ecrire un fichier GFF3 à partir de la sortie de scan_for_matches.
+Elle utilise les informations obtenues grace a parse_scanformatches.
+En-tête :
+input_file ↓ : chemin du fichier de résultats de recherche de motifs
+output_file ↓ : chemin du fichier GFF3 de sortie
+feature_type ↓ : type de feature à annoter dans le fichier GFF3
+seq_fasta_file ↓ : chemin du fichier FASTA (optionnel)
+
+Valeur retournée :
+Message de confirmation de l'écriture du fichier GFF3.
+
+Corps
+Variables locales
+- seq_id: Chaîne de caractères
+- positions: Dictionnaire
+- source : Chaîne de caractères
+- taille : Entier
+- feature_type : Chaîne de caractères
+- codon_start : Chaîne de caractères
+- start : Chaîne de caractères
+- end : Chaîne de caractères
+- gff_start : Chaîne de caractères
+- gff_end : Chaîne de caractères
+- score : Chaîne de caractères
+- strand : Chaîne de caractères
+- phase : Chaîne de caractères
+- attributes : Chaîne de caractères
+- gff3_line : Chaîne de caractères
+
+Instructions
+
+seq_id, positions <- parse_scanformatches(input_file)
+source <- "scan_for_matches"
+taille <- Non défini
+SI seq_fasta_file n'est pas Non défini ALORS
+    taille <- taille_seq(seq_fasta_file)
+FIN SI
+OUVRIR output_file EN ÉCRITURE FAIRE
+    EcrireLigne <- ( "##gff-version 3")
+    Ecrire EcrireLigne DANS output_file
+
+    Si taille est défini ALORS
+        EcrireLigne <- ('##sequence-region' +  seq_id + '1' + taille + '\n')
+        Ecrire EcrireLigne DANS output_file
+    FIN SI
+    POUR CHAQUE i DANS Trier(positions) FAIRE
+        codon_start <- Non defini
+        Si Tailles(positions[i]) = 3 ALORS
+            start , end ,codon_start <- positions[i]
+        SINON
+            start , end <- positions[i]
+        FIN SI
+        gff_start <- Minimum( Entier(start) , Entier(end) )
+        gff_end <- Maximum( Entier(start) , Entier(end) )
+        score <- "."
+        strand <- SI Entier(start) < Entier(end) ALORS '+' SINON '-'
+        phase <- "." // pas de phase pour RBS/promoteur/terminateur
+
+        SI codon_start n'est pas Non defini ALORS
+            attributes <- "ID=" + feature_type + "_" + i + ";Note=" + source + "_prediction;Start_codon=" + codon_start
+        SINON
+            attributes <- "ID=" + feature_type + "_" + i + ";Note=" + source + "_prediction"
+        FIN SI
+        EcrireLigne <- ( seq_id + '\t' + source + '\t' + feature_type + '\t' + gff_start + '\t' + gff_end + '\t' + score + '\t' + strand + '\t' + phase + '\t' + attributes )
+        Ecrire EcrireLigne DANS output_file
+    FIN POUR
+FERMER output_file
+Retourner "Fichier GFF3 '" + output_file + "' écrit avec succès."
+
+
+
+
+
+DEBUT
+Variables globales
+- nombre_d_arguments : Entier
+- input_file : Chaîne
+- output_file : Chaîne
+
+nombre_d_arguments <- Nombre_d_arguments_du_programme
+
+SI nombre_d_arguments < 4 ALORS
+    AFFICHER "Usage : parser_scanformatches.py <input_file> <output_file.gff3> <feature_type> [seq_fasta]"
+    TERMINER le programme
+FIN SI
+
+input_file <- argument 1
+output_file <- argument 2
+feature_type <- argument 3
+SI nombre_d_arguments = 5 ALORS
+    seq_fasta_file <- argument 4
+    Ecrire_GFF3(input_file, output_file, feature_type, seq_fasta_file)
+SINON
+    Ecrire_GFF3(input_file, output_file, feature_type)
+FIN SI
+FIN DEBUT

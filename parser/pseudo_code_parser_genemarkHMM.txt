@@ -1,13 +1,14 @@
 Importer re
 
-extract_infos_GenemarkHMM(chemin_fichier)
+Nom de la méthode ( ) : extract_infos_GenemarkHMM
+extract_infos_GenemarkHMM(input_file ↓ )
 
 Description:
 Extrait l'identifiant de la séquence, le nom du programme et les informations des
     CDS à partir d'un fichier de sortie genemarkhmm.
 
 En-tête :
-chemin_fichier ↓ : chemin du fichier d’entrée genemarkhmm
+input_file ↓ : chemin du fichier d’entrée genemarkhmm
 Valeur retournée : Tuple contenant :
     identifiant de la séquence (seqid)
     nom du programme (source)
@@ -30,7 +31,7 @@ cds_liste <- liste vide
 
 
 
-OUVRIR chemin_fichier EN LECTURE FAIRE
+OUVRIR input_file EN LECTURE FAIRE
     state <- 'outside'
     POUR CHAQUE ligne DANS fichier FAIRE
         ligne <- supprimerEspacesDebutetFin(ligne)
@@ -68,13 +69,13 @@ Retourner (seqid, source, cds_liste)
 
 
 
-
-taille_seq(chemin_fichier)
+Nom de la méthode ( ) : taille_seq
+taille_seq(seq_fasta_path ↓ )
 Description :
 Calcule la taille de la séquence à partir d'un fichier FASTA.
 
 En-tête :
-chemin_fichier ↓ : chemin du fichier FASTA
+seq_fasta_path ↓ : chemin du fichier FASTA
 Valeur retournée : Entier représentant la taille de la séquence
 
 Corps
@@ -85,7 +86,7 @@ Variables locales
 
 Instructions
 taille <- 0
-OUVRIR chemin_fichier EN LECTURE Faire
+OUVRIR seq_fasta_path EN LECTURE Faire
     POUR CHAQUE ligne DANS fichier FAIRE
         ligne <- supprimerEspacesDebutetFin(ligne)
         SI ligne ne commence pas par '>' ALORS
@@ -102,7 +103,7 @@ Retourner taille
 
 
 
-
+Nom de la méthode ( ) : Nettoyer_int
 Nettoyer_int(Caractere)
 Description :
 Supprime les caractères '>' et '<' d'une chaîne avant de la convertir en entier.
@@ -128,16 +129,16 @@ Retourner nombre_int
 
 
 
-
-Ecrire GFF3_GeneMark(chemin_fichier ↓ , chemin_sortie ↓ , seq_fasta (Non défini par défaut) ↓ )
+Nom de la méthode ( ) : Ecrire_GFF3_GeneMark
+Ecrire_GFF3_GeneMark(input_file ↓ , output_file ↓ , seq_fasta (Non défini par défaut) ↓ )
 Description :
 // Ecrit les annotations GFF3 des CDS extraits depuis un fichier de sortie GeneMark.hmm
 
 // Cette fonction utilise les extract_infos_GenemarkHMM et taille_seq pour obtenir les informations nécessaires.
 
 En-tête :
-chemin_fichier ↓ : chemin du fichier d’entrée GeneMark.hmm
-chemin_sortie ↓ : chemin du fichier de sortie GFF3
+input_file ↓ : chemin du fichier d’entrée GeneMark.hmm
+output_file ↓ : chemin du fichier de sortie GFF3
 Retourne message de succès
 
 Corps
@@ -161,19 +162,19 @@ Variables locales
 
 Instructions
 
-seqid, source, cds_list <- extract_infos_GenemarkHMM(chemin_fichier)
+seqid, source, cds_list <- extract_infos_GenemarkHMM(input_file)
 Taille <- Non défini
 
 SI seq_fasta existe ALORS
     taille <- taille_seq(seq_fasta)
 FIN SI
 
-OUVRIR chemin_sortie EN ECRITURE faire
+OUVRIR output_file EN ECRITURE faire
 
-  ECRIRE "##gff-version 3\n" DANS fichier chemin_sortie
+  ECRIRE "##gff-version 3\n" DANS fichier output_file
 
   SI taille existe ALORS
-      ECRIRE '##sequence-region ' + seqid + ' 1 ' + taille + '\n' DANS fichier chemin_sortie
+      ECRIRE '##sequence-region ' + seqid + ' 1 ' + taille + '\n' DANS fichier output_file
   FIN SI
 
   POUR i allant de 0 à longueur(cds_list) − 1 FAIRE fields <- cds_list[i]
@@ -201,10 +202,10 @@ OUVRIR chemin_sortie EN ECRITURE faire
       atributes <- 'ID=cds' + (i + 1) + ';Note=' + source + '_prediction;Class=' + classe
       
       ecrire_ligne <- seqid + '\t' + source + '\t' + 'CDS' + '\t' + start + '\t' + end + '\t' + score + '\t' + strand + '\t' + phase + '\t' + atributes + '\n'
-      ECRIRE ecrire_ligne DANS fichier chemin_sortie
+      ECRIRE ecrire_ligne DANS fichier output_file
   FIN POUR
-FERMER chemin_sortie
-Retourner 'GFF3 file ' + chemin_sortie + ' written successfully'
+FERMER output_file
+Retourner 'GFF3 file ' + output_file + ' written successfully'
 Fin Instructions
 
 
@@ -213,7 +214,7 @@ Variables globales
 - nombre_d_arguments : Entier
 - input_file : Chaîne
 - output_file : Chaîne
-- seq_fasta : Chaîne
+- seq_fasta_file : Chaîne
 DEBUT
 nombre_d_arguments <- Nombre_d_arguments_du_programme
 
@@ -225,8 +226,8 @@ FIN SI
 input_file <- argument 1
 output_file <- argument 2
 SI nombre_d_arguments = 4 ALORS
-    seq_fasta <- argument 3
-    Ecrire_GFF3_GeneMark(input_file, output_file, seq_fasta)
+    seq_fasta_file <- argument 3
+    Ecrire_GFF3_GeneMark(input_file, output_file, seq_fasta_file)
 FIN SI
 Ecrire_GFF3_GeneMark(input_file, output_file)
 

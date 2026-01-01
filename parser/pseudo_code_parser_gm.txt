@@ -1,12 +1,12 @@
 Importer re (Expressions régulieres)
 
 Nom de la méthode ( ) : extract_cds_genemark
-extract_cds_genemark(chemin: chaine de caractere) → liste
+extract_cds_genemark(input_file ↓)
     Description:
     // Extrait les CDS depuis un fichier de sortie GeneMark et retourne une liste de CDS “uniques” (un seul CDS par groupe partageant même brin, même frame et même codon stop).
 
     En-tête :
-    Liste ExtraireCDS_GeneMark( chemin_fichier ↓ )
+    input_file : chemin du fichier d’entrée GeneMark
 
     Corps
 
@@ -22,13 +22,15 @@ extract_cds_genemark(chemin: chaine de caractere) → liste
         •	stop : Entier
         •	cle : Tuple (brin, frame, stop)
         
+    Retourne :
+    Liste des CDS uniques extraits du fichier GeneMark
 Instructions
 
 cds_list <- liste vide 
 state <- 'outside'
 
-OUVRIR chemin_fichier EN LECTURE FAIRE
-    POUR CHAQUE ligne DANS fichier chemin_fichier FAIRE
+OUVRIR input_file EN LECTURE FAIRE
+    POUR CHAQUE ligne DANS fichier input_file FAIRE
     ligne <- supprimerEspacesDebutetFin(ligne)
 
     Si state = 'outside' ALORS
@@ -82,7 +84,7 @@ OUVRIR chemin_fichier EN LECTURE FAIRE
         groupes[cle] <- cds
     FIN SI    
     FIN POUR
-FERMER chemin_fichier
+FERMER input_file
 Retourner Valeurs(groupes) // liste des CDS uniques 
 Fin Instructions
 Fin Fonction
@@ -95,7 +97,7 @@ Description :
 // Extrait l’identifiant de la séquence, le nom du programme source et la longueur de la séquence à partir d’un fichier de sortie GeneMark.
 
 En-tête :
-chemin_fichier ↓ : chemin du fichier d’entrée GeneMark
+input_file ↓ : chemin du fichier d’entrée GeneMark
 Valeur retournée : Tuple contenant :
     identifiant de la séquence (seqid)
     nom du programme (source)
@@ -118,8 +120,8 @@ id <- chaîne vide
 source <- 'unknown'
 taille <- '.'
 
-OUVRIR chemin_fichier EN LECTURE FAIRE 
-    POUR CHAQUE ligne DANS fichier chemin_fichier FAIRE
+OUVRIR input_file EN LECTURE FAIRE 
+    POUR CHAQUE ligne DANS fichier input_file FAIRE
     
     SI ligne commence par 'Sequence:' ALORS
         seq <- ExtraireAvecExpressionRégulière(seqid_pat, ligne)
@@ -142,7 +144,7 @@ OUVRIR chemin_fichier EN LECTURE FAIRE
         QUITTER LA BOUCLE
     FIN SI
     FIN POUR
-FERMER chemin_fichier
+FERMER input_file
 Fin Instructions
 Retourner (id, source, taille)
 
@@ -151,14 +153,14 @@ Retourner (id, source, taille)
 
 
 Nom de la méthode ( ) : Ecrire GFF3_GeneMark
-Ecrire GFF3_GeneMark(chemin_fichier ↓ , chemin_sortie ↓ )
+Ecrire GFF3_GeneMark(input_file ↓ , output_file ↓ )
 Description :
 // Ecrit les annotations GFF3 des CDS extraits depuis un fichier de sortie GeneMark
 // Cette fonction utilise les ExtraireInfos_GeneMark et ExtraireCDS_GeneMark pour obtenir les informations nécessaires.
 
 En-tête :
-    chemin_fichier ↓ : chemin du fichier d’entrée GeneMark
-    chemin_sortie ↓ : chemin du fichier de sortie GFF3
+    input_file ↓ : chemin du fichier d’entrée GeneMark
+    output_file ↓ : chemin du fichier de sortie GFF3
     Retourne message de succès
 
 Corps
@@ -176,11 +178,11 @@ Corps
     - phase : Entier
     - score : Reel
 
-OUVRIR chemin_sortie EN ECRITURE FAIRE 
-    (seqid, source, taille) <- ExtraireInfos_GeneMark(chemin_fichier)
-    cds_list <- ExtraireCDS_GeneMark(chemin_fichier)
-    ECRIRE "##gff-version 3\n" DANS fichier chemin_sortie
-    ECRIRE "##sequence-region " + seqid + " 1 " + taille + "\n" DANS fichier chemin_sortie
+OUVRIR output_file EN ECRITURE FAIRE 
+    (seqid, source, taille) <- ExtraireInfos_GeneMark(input_file)
+    cds_list <- ExtraireCDS_GeneMark(input_file)
+    ECRIRE "##gff-version 3\n" DANS fichier output_file
+    ECRIRE "##sequence-region " + seqid + " 1 " + taille + "\n" DANS fichier output_file
 
 POUR i allant de 0 à longueur(cds_list) − 1 FAIRE 
     fields <- cds_list[i]
@@ -200,10 +202,10 @@ POUR i allant de 0 à longueur(cds_list) − 1 FAIRE
     atributes  <- 'ID=cds' + (i + 1) + ';Note' + (source) + '_prediction'
 
     ecrire_ligne <- seqid + '\t' + source + '\t' + feature_type + '\t' + start + '\t' + end + '\t' + score + '\t' + strand + '\t' + phase + '\t' + atributes + '\n'
-    ECRIRE ecrire_ligne DANS fichier chemin_sortie
+    ECRIRE ecrire_ligne DANS fichier output_file
 FIN POUR
-FERMER chemin_sortie
-Retourner 'GFF3 file ' + chemin_sortie + 'written successfully'
+FERMER output_file
+Retourner 'GFF3 file ' + output_file + 'written successfully'
 
 
 

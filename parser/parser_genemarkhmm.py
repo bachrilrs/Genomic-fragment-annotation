@@ -82,6 +82,8 @@ def write_gff3(input_file: str , output_file: str ,seq_fasta=None):
     :param input_file: fichier de sortie genemarkhmm
     :param output_file: fichier de sortie GFF3
     :param seq_fasta: fichier fasta optionnel pour obtenir la taille de la séquence si disponible
+    
+    Cette fonction utilise les extract_infos_GenemarkHMM et taille_seq pour obtenir les informations nécessaires.
 
     return: message de confirmation
     """
