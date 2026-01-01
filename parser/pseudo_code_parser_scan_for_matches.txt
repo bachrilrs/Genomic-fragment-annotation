@@ -1,0 +1,28 @@
+Taille_Sequence(chemin_fichier)
+Description :
+Calcule la taille de la séquence à partir d'un fichier FASTA.
+
+En-tête :
+chemin_fichier ↓ : chemin du fichier FASTA
+Valeur retournée : Entier représentant la taille de la séquence
+
+Corps
+Variables locales
+- taille: Entier
+- ligne: Chaîne
+
+
+Instructions
+taille ← 0
+Avec fichier ouvert chemin_fichier EN LECTURE FAIRE
+    POUR CHAQUE ligne DANS fichier FAIRE
+        ligne ← supprimerEspacesDebutetFin(ligne)
+        SI ligne commence par '>' ALORS
+            CONTINUER
+        SINON
+            taille ← taille + Longueur(ligne)
+        FIN SI
+    FIN POUR
+FIN AVEC
+Retourner taille
+

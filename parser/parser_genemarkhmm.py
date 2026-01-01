@@ -12,9 +12,9 @@ Le format GFF3 est décrit ici :
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 Nous avons utilisé cette ressource pour construire le fichier GFF3.
 """
-def parse_genemarkhmm_output(input_file: str):
+def extract_infos_GenemarkHMM(input_file: str):
     """
-    Docstring pour parse_genemarkhmm_output
+    Docstring pour extract_infos_GenemarkHMM
     Extrait l'identifiant de la séquence, le nom du programme et les informations des
     CDS à partir d'un fichier de sortie genemarkhmm.
     :param input_file: chemin du fichier de sortie genemarkhmm
@@ -61,6 +61,20 @@ def taille_seq(seq_fasta:str):
                 taille += len(line.strip())
     return taille
 
+
+
+def nettoyer_int(x: str):
+    """
+    Docstring pour nettoyer_int
+    Eviter les erreurs de conversion d'une chaîne de caractères en entier en supprimant les >/<.
+    (Notamment sur les positions dans genemarkhmm)
+    :param x: string
+    return: int
+    """
+    return int(x.replace("<","").replace(">",""))
+
+
+
 def write_gff3(input_file: str , output_file: str ,seq_fasta=None):
     """
     Docstring pour write_gff3
@@ -71,7 +85,7 @@ def write_gff3(input_file: str , output_file: str ,seq_fasta=None):
 
     return: message de confirmation
     """
-    seq_id , source , cds_list= parse_genemarkhmm_output(input_file)
+    seq_id , source , cds_list= extract_infos_GenemarkHMM(input_file)
     taille = None
     if seq_fasta: # optionnel 
         taille = taille_seq(seq_fasta)
@@ -102,16 +116,7 @@ def write_gff3(input_file: str , output_file: str ,seq_fasta=None):
             out_fh.write(f"{seq_id}\t{source}\tCDS\t{start}\t{end}\t{score}\t{strand}\t{phase}\t{attributs}\n")
     return f"GFF3 file '{output_file}' written successfully."
 
-def nettoyer_int(x: str):
-    """
-    Docstring pour nettoyer_int
-    Eviter les erreurs de conversion d'une chaîne de caractères en entier en supprimant les >/<.
-    :param x: string
-    :type x: str
 
-    return: int
-    """
-    return int(x.replace("<","").replace(">",""))
 
 if __name__ == '__main__':
     

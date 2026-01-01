@@ -1,0 +1,233 @@
+Importer re
+
+extract_infos_GenemarkHMM(chemin_fichier)
+
+Description:
+Extrait l'identifiant de la séquence, le nom du programme et les informations des
+    CDS à partir d'un fichier de sortie genemarkhmm.
+
+En-tête :
+chemin_fichier ↓ : chemin du fichier d’entrée genemarkhmm
+Valeur retournée : Tuple contenant :
+    identifiant de la séquence (seqid)
+    nom du programme (source)
+    liste des CDS (cds_liste)
+
+Corps
+Variables locales
+
+- seqid: Chaîne
+- source: Chaîne
+- cds_liste: Liste
+- ligne: Chaîne
+- mots: Liste
+- champs: Liste
+
+Instructions
+seqid <- chaîne vide
+source <- chaine vide
+cds_liste <- liste vide
+
+
+
+OUVRIR chemin_fichier EN LECTURE FAIRE
+    state <- 'outside'
+    POUR CHAQUE ligne DANS fichier FAIRE
+        ligne <- supprimerEspacesDebutetFin(ligne)
+        SI ligne contient  'version:' ALORS
+          mots <- Découper(ligne, " ")
+          source <- mots[0]
+        FIN SI
+        SI ligne commence par 'FASTA definition line:' ALORS
+
+            seq_match<- ExtraireAvecExpressionRégulière(':\s+(\S+)', ligne)
+        
+            SI seq_match retourne une valeur ALORS
+                seqid <- valeur extraite
+            FIN SI
+        FIN SI
+        SI ligne commence par 'Predicted genes:' ALORS
+            state <- 'data'
+            CONTINUER
+        FIN SI
+
+        SI state = 'data' ET PremiereLettre(ligne) est un chiffre ALORS
+            champs <- DécouperParSpaces(ligne)
+            AJouter champs à cds_liste
+        FIN SI
+    FIN POUR
+FERMER fichier
+Retourner (seqid, source, cds_liste)
+
+
+
+
+
+
+
+
+
+
+
+taille_seq(chemin_fichier)
+Description :
+Calcule la taille de la séquence à partir d'un fichier FASTA.
+
+En-tête :
+chemin_fichier ↓ : chemin du fichier FASTA
+Valeur retournée : Entier représentant la taille de la séquence
+
+Corps
+Variables locales
+- taille: Entier
+- ligne: Chaîne
+
+
+Instructions
+taille <- 0
+OUVRIR chemin_fichier EN LECTURE Faire
+    POUR CHAQUE ligne DANS fichier FAIRE
+        ligne <- supprimerEspacesDebutetFin(ligne)
+        SI ligne ne commence pas par '>' ALORS
+            taille <- taille + Longueur(ligne)
+        FIN SI
+    FIN POUR
+FERMER fichier
+Retourner taille
+
+
+
+
+
+
+
+
+
+Nettoyer_int(Caractere)
+Description :
+Supprime les caractères '>' et '<' d'une chaîne avant de la convertir en entier.
+
+En-tête :
+Caractere ↓ : Chaîne représentant un nombre avec potentiellement des caractères '>' ou '<
+Valeur retournée : Entier
+Corps
+Variables locales
+- nombre_str : Chaîne
+- nombre_int : Entier
+Instructions
+nombre_str <- Remplacer(Caractere, '>', '')
+nombre_str <- Remplacer(nombre_str, '<', '')
+nombre_int <- Entier(nombre_str)
+Retourner nombre_int
+
+
+
+
+
+
+
+
+
+
+Ecrire GFF3_GeneMark(chemin_fichier ↓ , chemin_sortie ↓ , seq_fasta (Non défini par défaut) ↓ )
+Description :
+// Ecrit les annotations GFF3 des CDS extraits depuis un fichier de sortie GeneMark.hmm
+
+// Cette fonction utilise les extract_infos_GenemarkHMM et taille_seq pour obtenir les informations nécessaires.
+
+En-tête :
+chemin_fichier ↓ : chemin du fichier d’entrée GeneMark.hmm
+chemin_sortie ↓ : chemin du fichier de sortie GFF3
+Retourne message de succès
+
+Corps
+Variables locales
+- seqid : Chaîne
+- source : Chaîne
+- cds_list : Liste
+- taille : Entier
+- i : Entier
+- fields : Liste
+- left : Entier
+- right : Entier
+- start : Entier
+- end : Entier
+- score : Chaîne
+- strand : Chaîne
+- phase : Entier
+- classe : Chaîne
+- atributes : Chaîne
+- ecrire_ligne : Chaîne
+
+Instructions
+
+seqid, source, cds_list <- extract_infos_GenemarkHMM(chemin_fichier)
+Taille <- Non défini
+
+SI seq_fasta existe ALORS
+    taille <- taille_seq(seq_fasta)
+FIN SI
+
+OUVRIR chemin_sortie EN ECRITURE faire
+
+  ECRIRE "##gff-version 3\n" DANS fichier chemin_sortie
+
+  SI taille existe ALORS
+      ECRIRE '##sequence-region ' + seqid + ' 1 ' + taille + '\n' DANS fichier chemin_sortie
+  FIN SI
+
+  POUR i allant de 0 à longueur(cds_list) − 1 FAIRE fields <- cds_list[i]
+      left <- Nettoyer_int(fields[0])
+      right <- Nettoyer_int(fields[1])
+      start <- Minimum(left, right)
+      end <- Maximum(left, right)
+
+
+      score <- '.'
+      strand <- fields[1]
+
+      SI strand = '+' ALORS
+         phase <- (start - 1) MOD 3
+        SINON
+            phase <- (end - 1) MOD 3
+      FIN SI
+
+      SI taille(cds_list) >= 6 ALORS
+          classe <- fields[5]
+        SINON
+          classe <- '.'
+      FIN SI
+    
+      atributes <- 'ID=cds' + (i + 1) + ';Note=' + source + '_prediction;Class=' + classe
+      
+      ecrire_ligne <- seqid + '\t' + source + '\t' + 'CDS' + '\t' + start + '\t' + end + '\t' + score + '\t' + strand + '\t' + phase + '\t' + atributes + '\n'
+      ECRIRE ecrire_ligne DANS fichier chemin_sortie
+  FIN POUR
+FERMER chemin_sortie
+Retourner 'GFF3 file ' + chemin_sortie + ' written successfully'
+Fin Instructions
+
+
+
+Variables globales
+- nombre_d_arguments : Entier
+- input_file : Chaîne
+- output_file : Chaîne
+- seq_fasta : Chaîne
+DEBUT
+nombre_d_arguments <- Nombre_d_arguments_du_programme
+
+SI nombre_d_arguments < 3 ALORS
+    AFFICHER "Usage: ./parser_genemarkhmm.py <input_file_gmhmmp.out> <output_file.gff3> [seq_fasta]"
+    TERMINER le programme
+FIN SI
+
+input_file <- argument 1
+output_file <- argument 2
+SI nombre_d_arguments = 4 ALORS
+    seq_fasta <- argument 3
+    Ecrire_GFF3_GeneMark(input_file, output_file, seq_fasta)
+FIN SI
+Ecrire_GFF3_GeneMark(input_file, output_file)
+
+FIN 

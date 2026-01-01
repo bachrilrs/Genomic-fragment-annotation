@@ -41,7 +41,7 @@ def extract_cds_genemark(input_file : str):
                     state = "data"
                 continue
 
-            # state == "data"
+
             if "List of Regions of interest" in line or "ABOUT THE MATRIX USED" in line: # fin des CDS
                 break # sortir de la boucle pas d'informations utiles après
 
@@ -55,8 +55,6 @@ def extract_cds_genemark(input_file : str):
                 # Ex: ['2402','3313','direct','fr','2','0.47','0.06']
                 cds_list.append(fields)
             
-
-    print(cds_list)
     # choisir un CDS par (strand, frame, stop)
 
     groupes = {}
@@ -71,16 +69,17 @@ def extract_cds_genemark(input_file : str):
             strand = "-"
             stop = int(fields[0])   # left end
 
+        # On choisi la première occurrence pour chaque groupe (strand, frame, stop)
         cle = (strand, frame, stop) # clé unique pour chaque 'groupe' partageant ces caractéristiques
 
         if cle not in groupes: # pas encore dans les groupes, on ajoute
             groupes[cle] = fields 
     return list(groupes.values()) # retourner la liste des CDS uniques
 
-def parse_gm_file(input_file : str):
+def extract_info_Genemark(input_file : str):
     """
-    Docstring pour parse_gm_file
-    Extrait l'identifiant et nom du programme utilisé.
+    Docstring pour extract_info_Genemark
+    Extrait l'identifiant de la séquence, le nom du programme source et la longueur de la séquence à partir d'un fichier de sortie GeneMark.
 
     Args:
         input_file (str): Le chemin vers le fichier d'entrée GeneMark.
@@ -110,7 +109,7 @@ def parse_gm_file(input_file : str):
                 taille_match = re.search(taille_pat , line)
                 if taille_match:
                     taille = int(taille_match.group(1))
-            if id and source != 'Unknown' and taille != '.':
+            if id != '' and source != 'Unknown' and taille != '.':
                 break # on a trouvé les deux informations nécessaires
     return id, source , taille
             
@@ -118,8 +117,7 @@ def write_gff3(input_file : str, output_file : str):
     """
     Docstring pour write_gff3
     Cette fonction écrit un fichier GFF3 à partir des données extraites d'un fichier GeneMark.
-
-    Elle utilise les fonctions `parse_gm_file` et `extract_cds_genemark` pour obtenir les informations nécessaires.
+    Elle utilise les fonctions `extract_info_Genemark` et `extract_cds_genemark` pour obtenir les informations nécessaires.
     
     :param input_file: chemin du fichier GeneMark en entrée
     :param output_file: chemin du fichier GFF3 en sortie
@@ -128,7 +126,7 @@ def write_gff3(input_file : str, output_file : str):
 
     with open(output_file, 'w') as out_fh:
         # Ecrire l'en-tête GFF3
-        seq_id , source , taille = parse_gm_file(input_file)
+        seq_id , source , taille = extract_info_Genemark(input_file)
         cds_list = extract_cds_genemark(input_file)
         out_fh.write("##gff-version 3\n")
         out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n')
