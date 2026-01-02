@@ -1,0 +1,18 @@
+GeneMark.hmm PROKARYOTIC (Version 3.42)
+Date: Sun Dec 28 04:20:47 2025
+Sequence file name: seq.fna
+Model file name: /home/genemark/parameters/prokaryotic/Bacillus_subtilis_168/GeneMark_hmm_combined.mod
+RBS: true
+Model information: Bacillus_subtilis_168
+
+FASTA definition line: 1_5404
+Predicted genes
+   Gene    Strand    LeftEnd    RightEnd       Gene     Class
+    #                                         Length
+    1        -           1        1440         1440        1
+    2        -        1437        2159          723        2
+    3        +        2402        3313          912        2
+    4        +        3324        4067          744        2
+    5        +        4084        4818          735        2
+    6        +        5103        5309          207        2
+
