@@ -43,8 +43,7 @@ def extract_infos_GenemarkHMM(input_file: str):
             if state == 'data' and line and line[0].isdigit(): # verifier que la ligne commence par un chiffre
                 fields = line.split() # on recupère les champs
                 cds_list.append(fields) 
-            
-
+    
     return seq_id , source , cds_list
 
 def taille_seq(seq_fasta:str):

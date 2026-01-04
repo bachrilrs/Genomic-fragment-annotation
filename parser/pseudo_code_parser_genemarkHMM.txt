@@ -1,3 +1,10 @@
+# author: Laroussi Bachri
+# December 29th , 2025
+# M1 BBS , Université de Toulouse
+# Projet Bioinformatique pour la génomique
+
+
+
 Importer re
 
 Nom de la méthode ( ) : extract_infos_GenemarkHMM

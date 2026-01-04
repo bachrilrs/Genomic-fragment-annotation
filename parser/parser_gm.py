@@ -55,26 +55,7 @@ def extract_cds_genemark(input_file : str):
                 # Ex: ['2402','3313','direct','fr','2','0.47','0.06']
                 cds_list.append(fields)
             
-    # choisir un CDS par (strand, frame, stop)
-
-    groupes = {}
-
-    for fields in cds_list:
-        frame = int(fields[4])  # fr 1 -> 0, fr 2 -> 1, fr3 -> 2
-
-        if fields[2] == "direct": # brin direct le stop est right end
-            strand = "+"
-            stop = int(fields[1])   # right end
-        elif fields[2] == "complement": # brin complémentaire le stop est left end
-            strand = "-"
-            stop = int(fields[0])   # left end
-
-        # On choisi la première occurrence pour chaque groupe (strand, frame, stop)
-        cle = (strand, frame, stop) # clé unique pour chaque 'groupe' partageant ces caractéristiques
-
-        if cle not in groupes: # pas encore dans les groupes, on ajoute
-            groupes[cle] = fields 
-    return list(groupes.values()) # retourner la liste des CDS uniques
+    return cds_list
 
 def extract_info_Genemark(input_file : str):
     """
@@ -132,8 +113,8 @@ def write_gff3(input_file : str, output_file : str):
         out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n')
         # Ecrire chaque CDS au format GFF3
         for idx, fields in enumerate(cds_list):
-            start = fields[0] 
-            end = fields[1] 
+            start = min(int(fields[0]), int(fields[1]))
+            end = max(int(fields[0]), int(fields[1]))
             feature_type = "CDS"
             strand = '+' if fields[2] == "direct" else '-'
             phase = str(int(fields[4]) - 1)  # fr 1->0, fr 2->1, fr3->2

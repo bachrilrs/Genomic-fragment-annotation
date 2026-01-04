@@ -1,3 +1,10 @@
+# author: Laroussi Bachri
+# December 29th , 2025
+# M1 BBS , Université de Toulouse
+# Projet Bioinformatique pour la génomique
+
+
+
 Importer re (Expressions régulieres)
 
 Nom de la méthode ( ) : extract_cds_genemark
@@ -66,26 +73,8 @@ OUVRIR input_file EN LECTURE FAIRE
     FIN SI
     FIN POUR
 
-    groupes <- Dictionnaire 
-
-    POUR CHAQUE cds DANS cds_list FAIRE
-        frame <- cds.frame
-        SI cds.orientation = "direct" ALORS
-            brin <- '+'
-            stop <- cds.right
-        SINON 
-            brin <- '-'
-            stop <- cds.left
-        FIN SI
-    
-    cle <- (brin ,frame, stop)
-    
-    SI cle n’existe pas dans groupes ALORS
-        groupes[cle] <- cds
-    FIN SI    
-    FIN POUR
 FERMER input_file
-Retourner Valeurs(groupes) // liste des CDS uniques 
+Retourner cds_list // liste des CDS  
 Fin Instructions
 Fin Fonction
 
@@ -186,8 +175,8 @@ OUVRIR output_file EN ECRITURE FAIRE
 
 POUR i allant de 0 à longueur(cds_list) − 1 FAIRE 
     fields <- cds_list[i]
-    start <- fields[0]
-    end <- fields[1]
+    start <- Minimum(Entier(fields[0]), Entier(fields[1]))
+    end <- Maximum(Entier(fields[0]), Entier(fields[1]))
     feature_type <- 'CDS'
     SI fields[2] = 'direct' ALORS 
       strand <- '+' 
