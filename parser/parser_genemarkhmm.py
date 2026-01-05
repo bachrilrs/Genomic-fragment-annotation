@@ -1,57 +1,57 @@
 #!/usr/bin/env python3
 # author: Laroussi Bachri
 # December 29th , 2025
-# M1 BBS , Université de Toulouse
-# Projet Bioinformatique pour la génomique
+# M1 BBS , University of Toulouse
+# Bioinformatics project for genomics
 import re
 import sys
 
 """
-Module pour parser la sortie de GeneMark.hmm et générer un fichier GFF3.
-Le format GFF3 est décrit ici :
+Module to parse GeneMark.hmm output and generate a GFF3 file.
+The GFF3 format is described here:
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
-Nous avons utilisé cette ressource pour construire le fichier GFF3.
+We used this resource to build the GFF3 file.
 """
 def extract_infos_GenemarkHMM(input_file: str):
     """
-    Docstring pour extract_infos_GenemarkHMM
-    Extrait l'identifiant de la séquence, le nom du programme et les informations des
-    CDS à partir d'un fichier de sortie genemarkhmm.
-    :param input_file: chemin du fichier de sortie genemarkhmm
+    Docstring for extract_infos_GenemarkHMM
+    Extracts the sequence identifier, program name, and CDS information
+    from a genemarkhmm output file.
+    :param input_file: path to the genemarkhmm output file
     :return: tuple (seq_id, source, cds_list)
-        seq_id : ID de la séquence (ex : nom du fragment FASTA)
-        source : Nom du programme (ex : GeneMark.hmm)
-        cds_list : liste des CDS extraits du fichier
+        seq_id : sequence ID (e.g., FASTA fragment name)
+        source : program name (e.g., GeneMark.hmm)
+        cds_list : list of CDS entries extracted from the file
     """
     seq_id = ''
     source = ''
     cds_list = []
     with open(input_file , 'r') as fh:
-        state = 'outside' # état initial avant la section des données
+        state = 'outside' # initial state before the data section
         for line_traitee in fh:
             line = line_traitee.strip()
-            if 'Version' in line: # ligne contenant le nom du programme
+            if 'Version' in line: # line containing the program name
                 source = line.split()[0]
-            if line.startswith('FASTA definition line:'): # ligne contenant l'ID de la séquence
+            if line.startswith('FASTA definition line:'): # line containing the sequence ID
                 seq_match = re.search(r':\s(\S*)' , line)
                 if seq_match:
                     seq_id = seq_match.group(1)
-            if line.startswith('Predicted genes'): # début de la section des données
+            if line.startswith('Predicted genes'): # start of the data section
                 state = 'data'
                 continue
 
-            if state == 'data' and line and line[0].isdigit(): # verifier que la ligne commence par un chiffre
-                fields = line.split() # on recupère les champs
+            if state == 'data' and line and line[0].isdigit(): # verify line starts with a digit
+                fields = line.split() # extract fields
                 cds_list.append(fields) 
     
     return seq_id , source , cds_list
 
 def taille_seq(seq_fasta:str):
     """
-    Docstring pour taille_seq
+    Docstring for taille_seq
     
-    :param seq_fasta: fichier fasta
-    :return: taille de la séquence
+    :param seq_fasta: fasta file
+    :return: sequence length
     """
     taille = 0
     with open(seq_fasta , 'r') as f:
@@ -64,9 +64,9 @@ def taille_seq(seq_fasta:str):
 
 def nettoyer_int(x: str):
     """
-    Docstring pour nettoyer_int
-    Eviter les erreurs de conversion d'une chaîne de caractères en entier en supprimant les >/<.
-    (Notamment sur les positions dans genemarkhmm)
+    Docstring for nettoyer_int
+    Avoid conversion errors when turning a string into an integer by removing >/<.
+    (Notably on positions in genemarkhmm)
     :param x: string
     return: int
     """
@@ -76,42 +76,42 @@ def nettoyer_int(x: str):
 
 def write_gff3(input_file: str , output_file: str ,seq_fasta=None):
     """
-    Docstring pour write_gff3
-    Ecrire un fichier GFF3 à partir de la sortie de genemarkhmm
-    :param input_file: fichier de sortie genemarkhmm
-    :param output_file: fichier de sortie GFF3
-    :param seq_fasta: fichier fasta optionnel pour obtenir la taille de la séquence si disponible
+    Docstring for write_gff3
+    Write a GFF3 file from genemarkhmm output
+    :param input_file: genemarkhmm output file
+    :param output_file: GFF3 output file
+    :param seq_fasta: optional fasta file to obtain the sequence length if available
     
-    Cette fonction utilise les extract_infos_GenemarkHMM et taille_seq pour obtenir les informations nécessaires.
+    This function uses extract_infos_GenemarkHMM and taille_seq to obtain the necessary information.
 
-    return: message de confirmation
+    return: confirmation message
     """
     seq_id , source , cds_list= extract_infos_GenemarkHMM(input_file)
     taille = None
-    if seq_fasta: # optionnel 
+    if seq_fasta: # optional
         taille = taille_seq(seq_fasta)
 
     with open(output_file, 'w') as out_fh:
         out_fh.write("##gff-version 3\n")
 
-        if taille: # optionnel si taille connue 
-            out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n') # on indique la taille de la séquence
+        if taille: # optional if length known
+            out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n') # indicate sequence length
         
         for i , fields in enumerate(cds_list):
             left = nettoyer_int(fields[2]) 
             right = nettoyer_int(fields[3])
-            start = min(left, right) # start <= end obligatoire en GFF3 d'apres la documentation
+            start = min(left, right) # start <= end mandatory in GFF3 according to documentation
             end = max(left, right)
 
-            score = '.' # pas de score dans genemarkhmm
-            strand = fields[1] # + ou -
+            score = '.' # no score in genemarkhmm
+            strand = fields[1] # + or -
 
-            if strand == '+': # brin direct
-                phase = (start - 1) % 3 # on calcule la phase a partir de la position de début
+            if strand == '+': # forward strand
+                phase = (start - 1) % 3 # calculate phase from start position
             else:
-                phase = (end - 1) % 3 # brin reverse on calcule a partir de la position de fin
+                phase = (end - 1) % 3 # reverse strand; calculate from end position
 
-            classe = fields[5] if len(fields)>=6 else '.' # entre typical et atypical (transfert horizontaux par ex)
+            classe = fields[5] if len(fields)>=6 else '.' # between typical and atypical (horizontal transfer, for example)
             attributs = f"ID=CDS_{i+1};Note={source}_prediction;Class={classe}"
 
             out_fh.write(f"{seq_id}\t{source}\tCDS\t{start}\t{end}\t{score}\t{strand}\t{phase}\t{attributs}\n")

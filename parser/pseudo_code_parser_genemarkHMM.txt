@@ -1,73 +1,71 @@
 # author: Laroussi Bachri
 # December 29th , 2025
-# M1 BBS , Université de Toulouse
-# Projet Bioinformatique pour la génomique
+# M1 BBS , University of Toulouse
+# Bioinformatics project for genomics
 
 
 
-Importer re
+Import re
 
-Nom de la méthode ( ) : extract_infos_GenemarkHMM
+Method name ( ): extract_infos_GenemarkHMM
 extract_infos_GenemarkHMM(input_file ↓ )
 
 Description:
-Extrait l'identifiant de la séquence, le nom du programme et les informations des
-    CDS à partir d'un fichier de sortie genemarkhmm.
+Extracts the sequence identifier, program name, and CDS information
+    from a genemarkhmm output file.
 
-En-tête :
-input_file ↓ : chemin du fichier d’entrée genemarkhmm
-Valeur retournée : Tuple contenant :
-    identifiant de la séquence (seqid)
-    nom du programme (source)
-    liste des CDS (cds_liste)
+Header:
+input_file ↓ : path to the genemarkhmm output file
+Return value: Tuple containing:
+    sequence identifier (seqid)
+    program name (source)
+    list of CDS (cds_list)
 
-Corps
-Variables locales
+Body
+Local variables
 
-- seqid: Chaîne
-- source: Chaîne
-- cds_liste: Liste
-- ligne: Chaîne
-- mots: Liste
-- champs: Liste
+- seqid: String
+- source: String
+- cds_list: List
+- line: String
+- words: List
+- fields: List
 
 Instructions
-seqid <- chaîne vide
-source <- chaine vide
-cds_liste <- liste vide
+seqid <- empty string
+source <- empty string
+cds_list <- empty list
 
 
 
-OUVRIR input_file EN LECTURE FAIRE
+OPEN input_file FOR READING DO
     state <- 'outside'
-    POUR CHAQUE ligne DANS fichier FAIRE
-        ligne <- supprimerEspacesDebutetFin(ligne)
-        SI ligne contient  'version:' ALORS
-          mots <- Découper(ligne, " ")
-          source <- mots[0]
-        FIN SI
-        SI ligne commence par 'FASTA definition line:' ALORS
+    FOR EACH line IN file DO
+        line <- stripSpacesAtStartAndEnd(line)
+        IF line contains  'version:' THEN
+          words <- Split(line, " ")
+          source <- words[0]
+        END IF
+        IF line starts with 'FASTA definition line:' THEN
 
-            seq_match<- ExtraireAvecExpressionRégulière(':\s+(\S+)', ligne)
+            seq_match<- ExtractWithRegex(':\s+(\S+)', line)
         
-            SI seq_match retourne une valeur ALORS
-                seqid <- valeur extraite
-            FIN SI
-        FIN SI
-        SI ligne commence par 'Predicted genes:' ALORS
+            IF seq_match returns a value THEN
+                seqid <- extracted value
+            END IF
+        END IF
+        IF line starts with 'Predicted genes:' THEN
             state <- 'data'
-            CONTINUER
-        FIN SI
+            CONTINUE
+        END IF
 
-        SI state = 'data' ET PremiereLettre(ligne) est un chiffre ALORS
-            champs <- DécouperParSpaces(ligne)
-            AJouter champs à cds_liste
-        FIN SI
-    FIN POUR
-FERMER fichier
-Retourner (seqid, source, cds_liste)
-
-
+        IF state = 'data' AND FirstLetter(line) is a digit THEN
+            fields <- SplitBySpaces(line)
+            ADD fields to cds_list
+        END IF
+    END FOR
+CLOSE file
+Return (seqid, source, cds_list)
 
 
 
@@ -76,32 +74,34 @@ Retourner (seqid, source, cds_liste)
 
 
 
-Nom de la méthode ( ) : taille_seq
+
+
+Method name ( ): taille_seq
 taille_seq(seq_fasta_path ↓ )
-Description :
-Calcule la taille de la séquence à partir d'un fichier FASTA.
+Description:
+Calculates the sequence length from a FASTA file.
 
-En-tête :
-seq_fasta_path ↓ : chemin du fichier FASTA
-Valeur retournée : Entier représentant la taille de la séquence
+Header:
+seq_fasta_path ↓ : path to the FASTA file
+Return value: Integer representing the sequence length
 
-Corps
-Variables locales
-- taille: Entier
-- ligne: Chaîne
+Body
+Local variables
+- taille: Integer
+- line: String
 
 
 Instructions
 taille <- 0
-OUVRIR seq_fasta_path EN LECTURE Faire
-    POUR CHAQUE ligne DANS fichier FAIRE
-        ligne <- supprimerEspacesDebutetFin(ligne)
-        SI ligne ne commence pas par '>' ALORS
-            taille <- taille + Longueur(ligne)
-        FIN SI
-    FIN POUR
-FERMER fichier
-Retourner taille
+OPEN seq_fasta_path FOR READING Do
+    FOR EACH line IN file DO
+        line <- stripSpacesAtStartAndEnd(line)
+        IF line does not start with '>' THEN
+            taille <- taille + Length(line)
+        END IF
+    END FOR
+CLOSE file
+Return taille
 
 
 
@@ -110,23 +110,23 @@ Retourner taille
 
 
 
-Nom de la méthode ( ) : Nettoyer_int
-Nettoyer_int(Caractere)
-Description :
-Supprime les caractères '>' et '<' d'une chaîne avant de la convertir en entier.
+Method name ( ): Nettoyer_int
+Nettoyer_int(Character)
+Description:
+Removes the '>' and '<' characters from a string before converting it to an integer.
 
-En-tête :
-Caractere ↓ : Chaîne représentant un nombre avec potentiellement des caractères '>' ou '<
-Valeur retournée : Entier
-Corps
-Variables locales
-- nombre_str : Chaîne
-- nombre_int : Entier
+Header:
+Character ↓ : String representing a number potentially containing '>' or '<'
+Return value: Integer
+Body
+Local variables
+- nombre_str : String
+- nombre_int : Integer
 Instructions
-nombre_str <- Remplacer(Caractere, '>', '')
-nombre_str <- Remplacer(nombre_str, '<', '')
-nombre_int <- Entier(nombre_str)
-Retourner nombre_int
+nombre_str <- Replace(Character, '>', '')
+nombre_str <- Replace(nombre_str, '<', '')
+nombre_int <- Integer(nombre_str)
+Return nombre_int
 
 
 
@@ -136,55 +136,55 @@ Retourner nombre_int
 
 
 
-Nom de la méthode ( ) : Ecrire_GFF3_GeneMark
-Ecrire_GFF3_GeneMark(input_file ↓ , output_file ↓ , seq_fasta (Non défini par défaut) ↓ )
-Description :
-// Ecrit les annotations GFF3 des CDS extraits depuis un fichier de sortie GeneMark.hmm
+Method name ( ): Write_GFF3_GeneMark
+Write_GFF3_GeneMark(input_file ↓ , output_file ↓ , seq_fasta (Undefined by default) ↓ )
+Description:
+// Writes the GFF3 annotations of CDS extracted from a GeneMark.hmm output file
 
-// Cette fonction utilise les extract_infos_GenemarkHMM et taille_seq pour obtenir les informations nécessaires.
+// This function uses extract_infos_GenemarkHMM and taille_seq to obtain the necessary information.
 
-En-tête :
-input_file ↓ : chemin du fichier d’entrée GeneMark.hmm
-output_file ↓ : chemin du fichier de sortie GFF3
-Retourne message de succès
+Header:
+input_file ↓ : path to the GeneMark.hmm output file
+output_file ↓ : path to the GFF3 output file
+Returns success message
 
-Corps
-Variables locales
-- seqid : Chaîne
-- source : Chaîne
-- cds_list : Liste
-- taille : Entier
-- i : Entier
-- fields : Liste
-- left : Entier
-- right : Entier
-- start : Entier
-- end : Entier
-- score : Chaîne
-- strand : Chaîne
-- phase : Entier
-- classe : Chaîne
-- atributes : Chaîne
-- ecrire_ligne : Chaîne
+Body
+Local variables
+- seqid : String
+- source : String
+- cds_list : List
+- taille : Integer
+- i : Integer
+- fields : List
+- left : Integer
+- right : Integer
+- start : Integer
+- end : Integer
+- score : String
+- strand : String
+- phase : Integer
+- classe : String
+- atributes : String
+- ecrire_ligne : String
 
 Instructions
 
 seqid, source, cds_list <- extract_infos_GenemarkHMM(input_file)
-Taille <- Non défini
+Taille <- Undefined
 
-SI seq_fasta existe ALORS
+IF seq_fasta exists THEN
     taille <- taille_seq(seq_fasta)
-FIN SI
+END IF
 
-OUVRIR output_file EN ECRITURE faire
+OPEN output_file FOR WRITING do
 
-  ECRIRE "##gff-version 3\n" DANS fichier output_file
+  WRITE "##gff-version 3\n" TO output_file
 
-  SI taille existe ALORS
-      ECRIRE '##sequence-region ' + seqid + ' 1 ' + taille + '\n' DANS fichier output_file
-  FIN SI
+  IF taille exists THEN
+      WRITE '##sequence-region ' + seqid + ' 1 ' + taille + '\n' TO output_file
+  END IF
 
-  POUR i allant de 0 à longueur(cds_list) − 1 FAIRE fields <- cds_list[i]
+  FOR i from 0 to length(cds_list) − 1 DO fields <- cds_list[i]
       left <- Nettoyer_int(fields[0])
       right <- Nettoyer_int(fields[1])
       start <- Minimum(left, right)
@@ -194,48 +194,48 @@ OUVRIR output_file EN ECRITURE faire
       score <- '.'
       strand <- fields[1]
 
-      SI strand = '+' ALORS
+      IF strand = '+' THEN
          phase <- (start - 1) MOD 3
-        SINON
+        ELSE
             phase <- (end - 1) MOD 3
-      FIN SI
+      END IF
 
-      SI taille(cds_list) >= 6 ALORS
+      IF length(cds_list) >= 6 THEN
           classe <- fields[5]
-        SINON
+        ELSE
           classe <- '.'
-      FIN SI
+      END IF
     
       atributes <- 'ID=cds' + (i + 1) + ';Note=' + source + '_prediction;Class=' + classe
       
       ecrire_ligne <- seqid + '\t' + source + '\t' + 'CDS' + '\t' + start + '\t' + end + '\t' + score + '\t' + strand + '\t' + phase + '\t' + atributes + '\n'
-      ECRIRE ecrire_ligne DANS fichier output_file
-  FIN POUR
-FERMER output_file
-Retourner 'GFF3 file ' + output_file + ' written successfully'
-Fin Instructions
+      WRITE ecrire_ligne TO output_file
+  END FOR
+CLOSE output_file
+Return 'GFF3 file ' + output_file + ' written successfully'
+End Instructions
 
 
 
-Variables globales
-- nombre_d_arguments : Entier
-- input_file : Chaîne
-- output_file : Chaîne
-- seq_fasta_file : Chaîne
-DEBUT
-nombre_d_arguments <- Nombre_d_arguments_du_programme
+Global variables
+- nombre_d_arguments : Integer
+- input_file : String
+- output_file : String
+- seq_fasta_file : String
+BEGIN
+nombre_d_arguments <- Number_of_program_arguments
 
-SI nombre_d_arguments < 3 ALORS
-    AFFICHER "Usage: ./parser_genemarkhmm.py <input_file_gmhmmp.out> <output_file.gff3> [seq_fasta]"
-    TERMINER le programme
-FIN SI
+IF nombre_d_arguments < 3 THEN
+    DISPLAY "Usage: ./parser_genemarkhmm.py <input_file_gmhmmp.out> <output_file.gff3> [seq_fasta]"
+    TERMINATE program
+END IF
 
 input_file <- argument 1
 output_file <- argument 2
-SI nombre_d_arguments = 4 ALORS
+IF nombre_d_arguments = 4 THEN
     seq_fasta_file <- argument 3
-    Ecrire_GFF3_GeneMark(input_file, output_file, seq_fasta_file)
-FIN SI
-Ecrire_GFF3_GeneMark(input_file, output_file)
+    Write_GFF3_GeneMark(input_file, output_file, seq_fasta_file)
+END IF
+Write_GFF3_GeneMark(input_file, output_file)
 
-FIN 
+END 

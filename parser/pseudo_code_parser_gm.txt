@@ -1,219 +1,219 @@
 # author: Laroussi Bachri
 # December 29th , 2025
-# M1 BBS , Université de Toulouse
-# Projet Bioinformatique pour la génomique
+# M1 BBS , University of Toulouse
+# Bioinformatics project for genomics
 
 
 
-Importer re (Expressions régulieres)
+Import re (Regular expressions)
 
-Nom de la méthode ( ) : extract_cds_genemark
+Method name ( ): extract_cds_genemark
 extract_cds_genemark(input_file ↓)
     Description:
-    // Extrait les CDS depuis un fichier de sortie GeneMark et retourne une liste de CDS “uniques” (un seul CDS par groupe partageant même brin, même frame et même codon stop).
+    // Extracts CDS from a GeneMark output file and returns a list of “unique” CDS (one CDS per group sharing the same strand, frame, and stop codon).
 
-    En-tête :
-    input_file : chemin du fichier d’entrée GeneMark
+    Header:
+    input_file : path to the GeneMark input file
 
-    Corps
+    Body
 
-    Variables locales
-        •	cds_list : Liste
-        •	state : Chaîne
-        •	ligne : Chaîne
-        •	champs : Liste
-        •	groupes : Dictionnaire<(brin, frame, stop), CDS>
-        •	fields : liste
-        •	brin : chaine de caractere (‘+’ ou ‘–’)
-        •	frame : Entier
-        •	stop : Entier
-        •	cle : Tuple (brin, frame, stop)
+    Local variables
+        • cds_list : List
+        • state : String
+        • line : String
+        • fields : List
+        • groups : Dictionary<(strand, frame, stop), CDS>
+        • fields : list
+        • strand : string (‘+’ or ‘–’)
+        • frame : Integer
+        • stop : Integer
+        • key : Tuple (strand, frame, stop)
         
-    Retourne :
-    Liste des CDS uniques extraits du fichier GeneMark
+    Returns:
+    List of unique CDS extracted from the GeneMark file
 Instructions
 
-cds_list <- liste vide 
+cds_list <- empty list 
 state <- 'outside'
 
-OUVRIR input_file EN LECTURE FAIRE
-    POUR CHAQUE ligne DANS fichier input_file FAIRE
-    ligne <- supprimerEspacesDebutetFin(ligne)
+OPEN input_file FOR READING DO
+    FOR EACH line IN input_file DO
+    line <- stripSpacesAtStartAndEnd(line)
 
-    Si state = 'outside' ALORS
-        Si ligne contient 'List of Open reading frames'
+    If state = 'outside' THEN
+        If line contains 'List of Open reading frames'
         state <- 'header'
-        FIN SI
-        continuer
-    FIN SI
-    SI state = 'header' ALORS
-        SI ligne commence par "--------" ALORS
+        END IF
+        continue
+    END IF
+    IF state = 'header' THEN
+        IF line starts with "--------" THEN
             state <- "data"
-        FIN SI
-            continuer
-    FIN SI
+        END IF
+            continue
+    END IF
         
-    Si ligne contient "List of Regions of interest" ou  ligne contient "ABOUT THE MATRIX USED" ALORS
-        QUITTER LA BOUCLE POUR
-    FIN SI
+    If line contains "List of Regions of interest" or line contains "ABOUT THE MATRIX USED" THEN
+        EXIT THE FOR LOOP
+    END IF
     
-    SI ligne est vide OU ligne commence par "Left" OU ligne commence par "end" OU ligne commence par "--------" ALORS
-        continuer
-    FIN SI
+    IF line is empty OR line starts with "Left" OR line starts with "end" OR line starts with "--------" THEN
+        continue
+    END IF
         
-    SI PremiereLettre(ligne) est un chiffre ET (ligne contient "direct" OU ligne contient "complement") ET (ligne contient "fr") ALORS
-        champs <- DecouperParSpaces(ligne) 
-        cds.left <- Entier(champs[0])
-        cds.right <- Entier(champs[1])
-        cds.orientation <- champs[2]  
-        cds.frame <- Entier(champs[4])
-        cds.coding_prob <- Reel(champs[5])
-        cds.start_prob <- Reel(champs[6])
-        Ajouter cds a cds_list
-    FIN SI
-    FIN POUR
+    IF FirstLetter(line) is a digit AND (line contains "direct" OR line contains "complement") AND (line contains "fr") THEN
+        fields <- SplitBySpaces(line) 
+        cds.left <- Integer(fields[0])
+        cds.right <- Integer(fields[1])
+        cds.orientation <- fields[2]  
+        cds.frame <- Integer(fields[4])
+        cds.coding_prob <- Real(fields[5])
+        cds.start_prob <- Real(fields[6])
+        Add cds to cds_list
+    END IF
+    END FOR
 
-FERMER input_file
-Retourner cds_list // liste des CDS  
-Fin Instructions
-Fin Fonction
+CLOSE input_file
+Return cds_list // list of CDS  
+End Instructions
+End Function
 
 
 
-Nom de la méthode ( ) : extract_info_Genemark
+Method name ( ): extract_info_Genemark
 
-Description :
-// Extrait l’identifiant de la séquence, le nom du programme source et la longueur de la séquence à partir d’un fichier de sortie GeneMark.
+Description:
+// Extracts the sequence identifier, source program name, and sequence length from a GeneMark output file.
 
-En-tête :
-input_file ↓ : chemin du fichier d’entrée GeneMark
-Valeur retournée : Tuple contenant :
-    identifiant de la séquence (seqid)
-    nom du programme (source)
-    longueur de la séquence (taille)
+Header:
+input_file ↓ : path to the GeneMark input file
+Return value: Tuple containing:
+    sequence identifier (seqid)
+    program name (source)
+    sequence length (taille)
 
-Corps
-    Variables locales
-    - seqid_pat : Chaîne
-    - taille_pat : Chaîne
-    - id : Chaîne
-    - source : Chaîne
-    - taille : Entier
-    - ligne : Chaîne
+Body
+    Local variables
+    - seqid_pat : String
+    - taille_pat : String
+    - id : String
+    - source : String
+    - taille : Integer
+    - line : String
 
 Instructions
 
 seqid_pat <- 'Sequence:\s+(\S+)'
 taille_pat <- 'Sequence length:\s+(\d+)'
-id <- chaîne vide
+id <- empty string
 source <- 'unknown'
 taille <- '.'
 
-OUVRIR input_file EN LECTURE FAIRE 
-    POUR CHAQUE ligne DANS fichier input_file FAIRE
+OPEN input_file FOR READING DO 
+    FOR EACH line IN input_file DO
     
-    SI ligne commence par 'Sequence:' ALORS
-        seq <- ExtraireAvecExpressionRégulière(seqid_pat, ligne)
-        Si ExtraireAvecExpressionRégulière retourne une valeur ALORS
-        id <- valeur extraite
-        SINON
+    IF line starts with 'Sequence:' THEN
+        seq <- ExtractWithRegex(seqid_pat, line)
+        If ExtractWithRegex returns a value THEN
+        id <- extracted value
+        ELSE
             id <- 'unknown'
-    FIN SI
-    Si ligne contient 'GeneMark' ALORS
+    END IF
+    If line contains 'GeneMark' THEN
         source <- 'GeneMark'
-    FIN SI
-    SI ligne commence par 'Sequence length:' ALORS
-            taille <- ExtraireAvecExpressionRégulière(taille_pat, ligne)
-        SI ExtraireAvecExpressionRégulière retourne une valeur ALORS
-            taille <- Entier(valeur extraite)
-        FIN SI
-    FIN SI
+    END IF
+    IF line starts with 'Sequence length:' THEN
+            taille <- ExtractWithRegex(taille_pat, line)
+        IF ExtractWithRegex returns a value THEN
+            taille <- Integer(extracted value)
+        END IF
+    END IF
 
-    SI id n’est pas '' et source n'est pas 'unknown' ET taille n’est pas '.' ALORS
-        QUITTER LA BOUCLE
-    FIN SI
-    FIN POUR
-FERMER input_file
-Fin Instructions
-Retourner (id, source, taille)
-
-
+    IF id is not '' and source is not 'unknown' AND taille is not '.' THEN
+        EXIT THE LOOP
+    END IF
+    END FOR
+CLOSE input_file
+End Instructions
+Return (id, source, taille)
 
 
 
-Nom de la méthode ( ) : Ecrire GFF3_GeneMark
-Ecrire GFF3_GeneMark(input_file ↓ , output_file ↓ )
-Description :
-// Ecrit les annotations GFF3 des CDS extraits depuis un fichier de sortie GeneMark
-// Cette fonction utilise les ExtraireInfos_GeneMark et ExtraireCDS_GeneMark pour obtenir les informations nécessaires.
 
-En-tête :
-    input_file ↓ : chemin du fichier d’entrée GeneMark
-    output_file ↓ : chemin du fichier de sortie GFF3
-    Retourne message de succès
 
-Corps
-    Variables locales
-    - seqid : Chaîne
-    - source : Chaîne
-    - taille : Entier
-    - cds_list : Liste
-    - feature_type : Chaîne
-    - start : Entier
-    - end : Entier
-    - i : Entier
-    - strand : Chaîne
-    - fields : Liste
-    - phase : Entier
-    - score : Reel
+Method name ( ): Write GFF3_GeneMark
+Write GFF3_GeneMark(input_file ↓ , output_file ↓ )
+Description:
+// Writes GFF3 annotations of CDS extracted from a GeneMark output file
+// This function uses ExtractInfos_GeneMark and ExtractCDS_GeneMark to obtain the required information.
 
-OUVRIR output_file EN ECRITURE FAIRE 
-    (seqid, source, taille) <- ExtraireInfos_GeneMark(input_file)
-    cds_list <- ExtraireCDS_GeneMark(input_file)
-    ECRIRE "##gff-version 3\n" DANS fichier output_file
-    ECRIRE "##sequence-region " + seqid + " 1 " + taille + "\n" DANS fichier output_file
+Header:
+    input_file ↓ : path to the GeneMark input file
+    output_file ↓ : path to the GFF3 output file
+    Returns success message
 
-POUR i allant de 0 à longueur(cds_list) − 1 FAIRE 
+Body
+    Local variables
+    - seqid : String
+    - source : String
+    - taille : Integer
+    - cds_list : List
+    - feature_type : String
+    - start : Integer
+    - end : Integer
+    - i : Integer
+    - strand : String
+    - fields : List
+    - phase : Integer
+    - score : Real
+
+OPEN output_file FOR WRITING DO 
+    (seqid, source, taille) <- ExtractInfos_GeneMark(input_file)
+    cds_list <- ExtractCDS_GeneMark(input_file)
+    WRITE "##gff-version 3\n" TO output_file
+    WRITE "##sequence-region " + seqid + " 1 " + taille + "\n" TO output_file
+
+FOR i from 0 to length(cds_list) − 1 DO 
     fields <- cds_list[i]
-    start <- Minimum(Entier(fields[0]), Entier(fields[1]))
-    end <- Maximum(Entier(fields[0]), Entier(fields[1]))
+    start <- Minimum(Integer(fields[0]), Integer(fields[1]))
+    end <- Maximum(Integer(fields[0]), Integer(fields[1]))
     feature_type <- 'CDS'
-    SI fields[2] = 'direct' ALORS 
+    IF fields[2] = 'direct' THEN 
       strand <- '+' 
-    SINON 
+    ELSE 
       strand <- '-'
-    FIN SI
-    phase <- fields[4] − 1 // ajuster la frame pour GFF3 (0-based)
+    END IF
+    phase <- fields[4] − 1 // adjust frame for GFF3 (0-based)
 
-    score <- fields[5] SI SCORE existe, sinon "."
-    FIN SI
+    score <- fields[5] IF SCORE exists, otherwise "."
+    END IF
 
     atributes  <- 'ID=cds' + (i + 1) + ';Note' + (source) + '_prediction'
 
     ecrire_ligne <- seqid + '\t' + source + '\t' + feature_type + '\t' + start + '\t' + end + '\t' + score + '\t' + strand + '\t' + phase + '\t' + atributes + '\n'
-    ECRIRE ecrire_ligne DANS fichier output_file
-FIN POUR
-FERMER output_file
-Retourner 'GFF3 file ' + output_file + 'written successfully'
+    WRITE ecrire_ligne TO output_file
+END FOR
+CLOSE output_file
+Return 'GFF3 file ' + output_file + 'written successfully'
 
 
 
 
-DEBUT
-Variables globales
-- nombre_d_arguments : Entier
-- input_file : Chaîne
-- output_file : Chaîne
+BEGIN
+Global variables
+- nombre_d_arguments : Integer
+- input_file : String
+- output_file : String
 
-nombre_d_arguments <- Nombre_d_arguments_du_programme
+nombre_d_arguments <- Number_of_program_arguments
 
-SI nombre_d_arguments != 2 ALORS
-    AFFICHER "Usage : parser_gm.py <input_file.gm> <output_file.gff3>"
-    TERMINER le programme
-FIN SI
+IF nombre_d_arguments != 2 THEN
+    DISPLAY "Usage : parser_gm.py <input_file.gm> <output_file.gff3>"
+    TERMINATE program
+END IF
 
 input_file <- argument 1
 output_file <- argument 2
 
-Ecrire_GFF3_GeneMark(input_file, output_file)
-FIN
+Write_GFF3_GeneMark(input_file, output_file)
+END

@@ -1,56 +1,56 @@
 #!/usr/bin/env python3
 # author: Laroussi Bachri
 # December 29th , 2025
-# M1 BBS , Université de Toulouse
-# Projet Bioinformatique pour la génomique
+# M1 BBS , University of Toulouse
+# Bioinformatics project for genomics
 import re
 import sys
 
 """
-Module pour parser la sortie de GeneMark et générer un fichier GFF3.
-Le format GFF3 est décrit ici :
+Module to parse GeneMark output and generate a GFF3 file.
+The GFF3 format is described here:
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
-Nous avons utilisé cette ressource pour construire le fichier GFF3.
+We used this resource to build the GFF3 file.
 """
 
 def extract_cds_genemark(input_file : str):
     """
-    Docstring pour extract_cds_genemark
-    Extrait les informations des CDS à partir d'un fichier GeneMark.
+    Docstring for extract_cds_genemark
+    Extracts CDS information from a GeneMark file.
     Args:
-        input_file (str): Le chemin vers le fichier d'entrée GeneMark.
+        input_file (str): Path to the GeneMark input file.
     Returns:
-        list: Une liste de listes, chaque sous-liste contenant les champs d'un CDS.
+        list: A list of lists, each sub-list containing the fields of a CDS.
     """
 
     cds_list = []
-    state = "outside" # état initial : en dehors de la section CDS , dans quelle section on est
+    state = "outside" # initial state: outside the CDS section, which section we are in
 
     with open(input_file, "r") as f:
         for line_traitee in f:
-            line = line_traitee.strip()  # enlever les espaces en début/fin de ligne
+            line = line_traitee.strip()  # remove spaces at the beginning/end of the line
 
-            if state == "outside":  # on cherche l'entête des CDS
+            if state == "outside":  # looking for the CDS header
                 if "List of Open reading frames" in line:
-                    state = "header" # trouvé 
+                    state = "header" # found
                 continue
 
             if state == "header":
-                # on attend la "barre" sous l'entête de colonnes
+                # waiting for the "bar" under the column header
                 if line.startswith("--------"):
                     state = "data"
                 continue
 
 
-            if "List of Regions of interest" in line or "ABOUT THE MATRIX USED" in line: # fin des CDS
-                break # sortir de la boucle pas d'informations utiles après
+            if "List of Regions of interest" in line or "ABOUT THE MATRIX USED" in line: # end of CDS section
+                break # exit loop; no useful information afterward
 
-            if line == "" or line.startswith("Left") or line.startswith("end") or line.startswith("--------"): # ignorer lignes vides ou sans intérêt
+            if line == "" or line.startswith("Left") or line.startswith("end") or line.startswith("--------"): # ignore empty or uninformative lines
                 continue 
 
-            # Les lignes CDS commencent par un nombre (après strip) et contiennent direct/complement + fr
+            # CDS lines start with a number (after strip) and contain direct/complement + fr
             if line[0].isdigit() and (("direct" in line) or ("complement" in line)) and ("fr" in line):
-                fields = line.split()  # on split par défaut sur les espaces , obtention sous forme de liste
+                fields = line.split()  # split on spaces by default, obtain as list
                 # fields attendu: [left, right, strand, 'fr', frame, coding_prob, start_prob]
                 # Ex: ['2402','3313','direct','fr','2','0.47','0.06']
                 cds_list.append(fields)
@@ -59,19 +59,19 @@ def extract_cds_genemark(input_file : str):
 
 def extract_info_Genemark(input_file : str):
     """
-    Docstring pour extract_info_Genemark
-    Extrait l'identifiant de la séquence, le nom du programme source et la longueur de la séquence à partir d'un fichier de sortie GeneMark.
+    Docstring for extract_info_Genemark
+    Extracts the sequence identifier, source program name, and sequence length from a GeneMark output file.
 
     Args:
-        input_file (str): Le chemin vers le fichier d'entrée GeneMark.
+        input_file (str): Path to the GeneMark input file.
     return:
 
-    seqid :  ID de la séquence (ex : 1_5404 ou nom du fragment FASTA)
+    seqid :  Sequence ID (e.g., 1_5404 or FASTA fragment name)
 
-    source :  Nom du programme (GeneMark, GeneMark.hmm, scan_for_matches)
+    source :  Program name (GeneMark, GeneMark.hmm, scan_for_matches)
     """
-    seqid_pat = r'Sequence:\s(\S*)' # motif pour extraire l'ID de la séquence
-    taille_pat = r'Sequence length:\s(\d+)' # motif pour extraire la longueur de la séquence
+    seqid_pat = r'Sequence:\s(\S*)' # pattern to extract sequence ID
+    taille_pat = r'Sequence length:\s(\d+)' # pattern to extract sequence length
     id = ''
     source = 'Unknown' 
     taille = '.'
@@ -80,38 +80,38 @@ def extract_info_Genemark(input_file : str):
             if line.startswith('Sequence:'):
                 seqid_match = re.search(seqid_pat , line) 
                 if seqid_match:
-                    id = seqid_match.group(1) # extraire l'ID
+                    id = seqid_match.group(1) # extract ID
                 else:
                     id = 'unknown_id'
-            if 'GENEMARK' in line.upper(): # détecter le programme GeneMark 
-                # Le fichier ne presente pas explicitement le nom du programme utilisé
-                source = 'GeneMark' # on suppose GeneMark si on trouve ce mot
+            if 'GENEMARK' in line.upper(): # detect GeneMark program
+                # The file does not explicitly show the name of the program used
+                source = 'GeneMark' # assume GeneMark if we find this word
             if line.startswith('Sequence length:'):
                 taille_match = re.search(taille_pat , line)
                 if taille_match:
                     taille = int(taille_match.group(1))
             if id != '' and source != 'Unknown' and taille != '.':
-                break # on a trouvé les deux informations nécessaires
+                break # found both required pieces of information
     return id, source , taille
             
 def write_gff3(input_file : str, output_file : str):
     """
-    Docstring pour write_gff3
-    Cette fonction écrit un fichier GFF3 à partir des données extraites d'un fichier GeneMark.
-    Elle utilise les fonctions `extract_info_Genemark` et `extract_cds_genemark` pour obtenir les informations nécessaires.
+    Docstring for write_gff3
+    This function writes a GFF3 file from data extracted from a GeneMark file.
+    It uses the `extract_info_Genemark` and `extract_cds_genemark` functions to obtain the required information.
     
-    :param input_file: chemin du fichier GeneMark en entrée
-    :param output_file: chemin du fichier GFF3 en sortie
-    :return: message de confirmation de l'écriture du .GFF3
+    :param input_file: path to the input GeneMark file
+    :param output_file: path to the output GFF3 file
+    :return: confirmation message for writing the .GFF3
     """
 
     with open(output_file, 'w') as out_fh:
-        # Ecrire l'en-tête GFF3
+        # Write GFF3 header
         seq_id , source , taille = extract_info_Genemark(input_file)
         cds_list = extract_cds_genemark(input_file)
         out_fh.write("##gff-version 3\n")
         out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n')
-        # Ecrire chaque CDS au format GFF3
+        # Write each CDS in GFF3 format
         for idx, fields in enumerate(cds_list):
             start = min(int(fields[0]), int(fields[1]))
             end = max(int(fields[0]), int(fields[1]))

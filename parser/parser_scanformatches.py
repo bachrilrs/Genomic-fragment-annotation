@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # author: Laroussi Bachri
 # December 29th , 2025
-# M1 BBS , Université de Toulouse
-# Projet Bioinformatique pour la génomique
+# M1 BBS , University of Toulouse
+# Bioinformatics project for genomics
 
 import re
 import sys
 """
-Module pour parser la sortie de Scan_for_matches et générer un fichier GFF3.
-Le format GFF3 est décrit ici :
+Module to parse Scan_for_matches output and generate a GFF3 file.
+The GFF3 format is described here:
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
-Nous avons utilisé cette ressource pour construire le fichier GFF3.
+We used this resource to build the GFF3 file.
 """
 def taille_seq(seq_fasta:str):
     """
-    Docstring pour taille_seq
+    Docstring for taille_seq
     
-    :param seq_fasta: fichier fasta
-    :return: taille de la séquence
+    :param seq_fasta: fasta file
+    :return: sequence length
     """
     taille = 0
     with open(seq_fasta , 'r') as f:
@@ -28,19 +28,19 @@ def taille_seq(seq_fasta:str):
 
 def parse_scanformatches(input_file: str):
     """
-    Docstring pour parse_scanformatches
-    Extrait les informations des matches à partir d'un fichier scan_for_matches.
+    Docstring for parse_scanformatches
+    Extracts match information from a scan_for_matches file.
     Args:
-        input_file (str): Le chemin vers le fichier d'entrée scan_for_matches.
+        input_file (str): Path to the scan_for_matches input file.
     Returns:
-        list: Une liste de listes, chaque sous-liste contenant les champs d'un match.
+        list: A list of lists, each sub-list containing the fields of a match.
     """
     seq_id = None
     positions = {}
     i=0
     with open(input_file, "r") as f:
         for line_traitee in f:
-            line = line_traitee.strip()  # enlever les espaces en début/fin de ligne
+            line = line_traitee.strip()  # remove spaces at the beginning/end of the line
 
             if line.startswith(">") and seq_id is None:
                 seq_id_match = re.search(r'^>(\S+):' , line)
@@ -60,26 +60,26 @@ def parse_scanformatches(input_file: str):
 
 def write_gff3(input_file: str , output_file: str , feature_type , seq_fasta=None):
     """
-    Docstring pour write_gff3
-    Ecrire un fichier GFF3 à partir de la sortie de scan_for_matches
-    :param input_file: fichier de sortie scan_for_matches
-    :param output_file: fichier de sortie GFF3
-    :param seq_fasta: fichier fasta optionnel pour obtenir la taille de la séquence si disponible
+    Docstring for write_gff3
+    Write a GFF3 file from scan_for_matches output
+    :param input_file: scan_for_matches output file
+    :param output_file: GFF3 output file
+    :param seq_fasta: optional fasta file to obtain the sequence length if available
 
-    return: message de confirmation
+    return: confirmation message
     """
     seq_id , positions = parse_scanformatches(input_file)
     source = 'scan_for_matches'
     taille = None
-    feature_type = feature_type  # ou RBS/promoter/terminator selon le contexte
-    if seq_fasta: # optionnel 
+    feature_type = feature_type  # or RBS/promoter/terminator depending on context
+    if seq_fasta: # optional
         taille = taille_seq(seq_fasta)
 
     with open(output_file, 'w') as out_fh:
         out_fh.write("##gff-version 3\n")
 
-        if taille: # optionnel si taille connue 
-            out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n') # on indique la taille de la séquence
+        if taille: # optional if length known
+            out_fh.write(f'##sequence-region {seq_id} 1 {taille}\n') # indicate sequence length
         
         for i  in sorted(positions):
             codon_start = None
@@ -90,12 +90,12 @@ def write_gff3(input_file: str , output_file: str , feature_type , seq_fasta=Non
 
 
             gff_start = min(int(start), int(end))
-            gff_end = max(int(start), int(end)) # start <= end obligatoire en GFF3 d'apres la documentation
+            gff_end = max(int(start), int(end)) # start <= end mandatory in GFF3 according to documentation
 
-            score = '.' # pas de score dans scan_for_matches
+            score = '.' # no score in scan_for_matches
             strand = '+' if int(start) < int(end) else '-'
 
-            phase = '.' # pas de phase pour RBS/promoteur/terminateur
+            phase = '.' # no phase for RBS/promoter/terminator
             if codon_start:
                 attributs = f"ID={feature_type}_{i};Note={source}_prediction;Start_Codon={codon_start}"
             else:
@@ -115,4 +115,3 @@ if __name__ == '__main__':
         write_gff3(input_file , output_file, feature_type , fasta)
     else:   
         write_gff3(input_file , output_file,feature_type)
-
